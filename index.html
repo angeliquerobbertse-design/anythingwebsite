@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Anything — Spend less time deciding. More time living.</title>
+<meta name="description" content="Anything helps you decide what to eat, wear, watch, and do. Instantly. Every day."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600;1,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg:    '#0D0D0D',  bg2:  '#111111',  bg3:  '#0A0A0A',
+        card:  '#161616',  card2:'#1C1C1C',
+        gold:  '#C8A96E',  gold2:'#E8C98E',
+        eat:   '#E8612A',
+        wear:  '#1F9B6E',
+        watch: '#6246EA',
+        do:    '#C4970A',
+        ink:   '#F5F2ED',  ink2: '#A09C96',  ink3: '#5C5854',  ink4: '#3A3835',
+      },
+      fontFamily: {
+        display: ['"Playfair Display"','serif'],
+        body:    ['"Instrument Sans"','sans-serif'],
+      },
+      borderRadius: { xl2:'28px', xl3:'40px' },
+      animation: {
+        'pulse-dot':'pulse-dot 2s ease-in-out infinite',
+        'fade-up':  'fade-up .35s ease both',
+        'spin-slow':'spin .7s linear infinite',
+        'word-in':  'word-in .45s ease both',
+        'word-out': 'word-out .45s ease both',
+      },
+      keyframes: {
+        'pulse-dot':{'0%,100%':{opacity:'1',transform:'scale(1)'},'50%':{opacity:'.5',transform:'scale(1.25)'}},
+        'fade-up':  {from:{opacity:'0',transform:'translateY(14px)'},to:{opacity:'1',transform:'translateY(0)'}},
+        'spin':     {to:{transform:'rotate(360deg)'}},
+        'word-in':  {from:{opacity:'0',transform:'translateY(100%)'},to:{opacity:'1',transform:'translateY(0)'}},
+        'word-out': {from:{opacity:'1',transform:'translateY(0)'},to:{opacity:'0',transform:'translateY(-100%)'}},
+      },
+    }
+  }
+}
+</script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'Instrument Sans',sans-serif;background:#0D0D0D;color:#F5F2ED;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-track{background:#111;}
+  ::-webkit-scrollbar-thumb{background:#3A3835;border-radius:2px;}
+  .font-display{font-family:'Playfair Display',serif;}
+  /* hero word cycle */
+  .word-slot{display:inline-block;overflow:hidden;height:1.05em;vertical-align:bottom;min-width:2ch;}
+  .word-enter{animation:word-in .4s ease both;}
+  .word-exit {animation:word-out .4s ease both;}
+  @keyframes word-in {from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
+  @keyframes word-out{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-100%)}}
+  /* reveal on scroll */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .65s ease,transform .65s ease;}
+  .reveal.in{opacity:1;transform:none;}
+  .d1{transition-delay:.08s;} .d2{transition-delay:.16s;} .d3{transition-delay:.24s;} .d4{transition-delay:.32s;}
+  /* range input */
+  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:#1C1C1C;border-radius:2px;outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#C8A96E;border:2px solid #0D0D0D;box-shadow:0 0 0 2px rgba(200,169,110,.3);}
+  input[type=range].eat-range::-webkit-slider-thumb{background:#E8612A;box-shadow:0 0 0 2px rgba(232,97,42,.3);}
+  /* cost bar */
+  .cost-bar{height:3px;background:#1C1C1C;border-radius:2px;overflow:hidden;}
+  .cost-bar-fill{height:100%;border-radius:2px;width:0;transition:width 1.4s cubic-bezier(.4,0,.2,1);}
+  .ing-list-wrap{max-height:0;overflow:hidden;transition:max-height .4s ease;}
+  .ing-list-wrap.open{max-height:600px;}
+  /* product card hover reveals */
+  .product-card .card-desc,.product-card .card-cta{opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s;}
+  .product-card:hover .card-desc,.product-card:hover .card-cta{opacity:1;transform:translateY(0);}
+  @media(max-width:767px){
+    .product-card .card-desc,.product-card .card-cta{opacity:1;transform:none;}
+  }
+  .product-card .card-accent{transform:scaleX(0);transform-origin:left;transition:transform .4s ease;}
+  .product-card:hover .card-accent{transform:scaleX(1);}
+  /* take out 2-col grid */
+  .rest-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:640px){.rest-grid{grid-template-columns:1fr;}}
+  /* outfit image grid */
+  .outfit-img-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  /* quiz */
+  .quiz-opt{padding:10px 14px;background:#1C1C1C;border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:13px;color:#F5F2ED;cursor:pointer;transition:border-color .15s,background .15s;font-family:'Instrument Sans',sans-serif;}
+  .quiz-opt:hover{border-color:rgba(196,151,10,.5);background:rgba(196,151,10,.08);}
+  .quiz-opt.correct{background:rgba(31,155,110,.15);border-color:#1F9B6E;color:#1F9B6E;pointer-events:none;}
+  .quiz-opt.wrong{background:rgba(232,97,42,.15);border-color:#E8612A;color:#E8612A;pointer-events:none;}
+  .quiz-opt.disabled{pointer-events:none;opacity:.6;}
+  /* chip */
+  .chip{padding:7px 14px;border-radius:99px;border:1px solid rgba(255,255,255,.12);background:transparent;font-size:13px;font-weight:500;color:#A09C96;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:'Instrument Sans',sans-serif;}
+  .chip:hover{border-color:rgba(255,255,255,.2);color:#F5F2ED;}
+  .chip.on-eat{background:rgba(232,97,42,.12);border-color:#E8612A;color:#E8612A;font-weight:600;}
+  .chip.on-wear{background:rgba(31,155,110,.12);border-color:#1F9B6E;color:#1F9B6E;font-weight:600;}
+  .chip.on-watch{background:rgba(98,70,234,.12);border-color:#6246EA;color:#a99aff;font-weight:600;}
+  .chip.on-do{background:rgba(196,151,10,.12);border-color:#C4970A;color:#C4970A;font-weight:600;}
+  .chip.on-gold{background:rgba(200,169,110,.12);border-color:#C8A96E;color:#C8A96E;font-weight:600;}
+  /* Lucide-like SVG icons inlined via CSS */
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useMemo}=React;
+
+/* ═══ ICONS — clean SVG, no emoji ═══════════════════════════════════════════ */
+const Icon=({name,size=16,cls=''})=>{
+  const s={width:size,height:size,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.75,strokeLinecap:'round',strokeLinejoin:'round',className:cls,style:{display:'inline-block',verticalAlign:'middle',flexShrink:0}};
+  const p={
+    utensils:<><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></>,
+    shirt:<><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></>,
+    tv:<><rect width="20" height="15" x="2" y="7" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></>,
+    compass:<><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></>,
+    mappin:<><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></>,
+    chevronr:<polyline points="9 18 15 12 9 6"/>,
+    chevronl:<polyline points="15 18 9 12 15 6"/>,
+    chevrondown:<polyline points="6 9 12 15 18 9"/>,
+    chevronup:<polyline points="18 15 12 9 6 15"/>,
+    arrowr:<><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></>,
+    arrowdown:<><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></>,
+    refresh:<><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></>,
+    cloud:<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>,
+    wind:<><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></>,
+    thermometer:<><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></>,
+    shopping:<><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></>,
+    star:<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>,
+    play:<polygon points="5 3 19 12 5 21 5 3"/>,
+    search:<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></>,
+    plus:<><path d="M5 12h14"/><path d="M12 5v14"/></>,
+    x:<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
+    check:<polyline points="20 6 9 11 4 16"/>,
+    clock:<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+    lightbulb:<><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></>,
+    zap:<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
+    users:<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+    lock:<><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+    globe:<><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></>,
+    flag:<><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></>,
+    calendar:<><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></>,
+    heart:<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>,
+    gift:<><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7" rx="1"/><line x1="12" x2="12" y1="22" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></>,
+    plane:<><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 2c-2-2-4-2-5.5-.5L10 5 1.8 6.2c-.5.1-.9.5-.9 1 0 .3.1.6.3.8l7 7c.2.2.5.3.8.3.5 0 .9-.4 1-.9L11.5 8l5.5 5.5-3.1 7.3c-.2.5.1 1.1.6 1.3.5.2 1.1-.1 1.3-.6z"/></>,
+    dumbbell:<><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></>,
+    loader:<><line x1="12" x2="12" y1="2" y2="6"/><line x1="12" x2="12" y1="18" y2="22"/><line x1="4.93" x2="7.76" y1="4.93" y2="7.76"/><line x1="16.24" x2="19.07" y1="16.24" y2="19.07"/><line x1="2" x2="6" y1="12" y2="12"/><line x1="18" x2="22" y1="12" y2="12"/><line x1="4.93" x2="7.76" y1="19.07" y2="16.24"/><line x1="16.24" x2="19.07" y1="7.76" y2="4.93"/></>,
+  };
+  return <svg {...s}>{p[name]||null}</svg>;
+};
+
+/* ═══ DATA ═══════════════════════════════════════════════════════════════════ */
+const LOCATIONS=[
+  {id:'cape-town',   label:'Cape Town',     sub:'Western Cape',    lat:-33.9249,lon:18.4241},
+  {id:'johannesburg',label:'Johannesburg',  sub:'Gauteng',         lat:-26.2041,lon:28.0473},
+  {id:'durban',      label:'Durban',        sub:'KwaZulu-Natal',   lat:-29.8587,lon:31.0218},
+  {id:'pretoria',    label:'Pretoria',      sub:'Gauteng',         lat:-25.7479,lon:28.2293},
+  {id:'pe',          label:'Gqeberha (PE)', sub:'Eastern Cape',    lat:-33.9608,lon:25.6022},
+  {id:'bloem',       label:'Bloemfontein',  sub:'Free State',      lat:-29.0852,lon:26.1596},
+  {id:'el',          label:'East London',   sub:'Eastern Cape',    lat:-33.0153,lon:27.9116},
+  {id:'nelspruit',   label:'Mbombela',      sub:'Mpumalanga',      lat:-25.4745,lon:30.9694},
+  {id:'polokwane',   label:'Polokwane',     sub:'Limpopo',         lat:-23.9045,lon:29.4689},
+  {id:'george',      label:'George',        sub:'Western Cape',    lat:-33.9630,lon:22.4617},
+];
+
+const ACTS={
+  'cape-town':{any:["Hike Lion's Head at sunrise","Visit the V&A Waterfront","Explore Kirstenbosch Gardens","Day trip to Cape Point","Cycle Sea Point promenade","Visit Robben Island","Explore Bo-Kaap neighbourhood","Paraglide from Signal Hill"],outdoor:["Hike Table Mountain via Platteklip Gorge","Surf at Muizenberg","Kayak from Simon's Town","Boulders Beach penguin colony","Chapman's Peak coastal walk"],arts:["Zeitz MOCAA Museum","Slave Lodge Museum","District Six Museum","South African National Gallery"],food:["Long Street food walk","Oranjezicht City Farm Market","Cape Malay cooking class in Bo-Kaap","Wine tasting in Constantia","Neighbourgoods Market in Woodstock"],wellness:["Sunrise yoga on Signal Hill","Swim at Camps Bay tidal pool","Hike Silvermine Nature Reserve","Spa day in Camps Bay"],social:["Sundowners at Boulders Bistro","Comedy at On Broadway","Sunset cruise from V&A","Trivia night in De Waterkant"]},
+  'johannesburg':{any:["Visit the Apartheid Museum","Explore Maboneng Precinct","Tour the Cradle of Humankind","Day trip to Pilanesberg","Explore Constitution Hill","Walk the 44 Stanley arts precinct"],outdoor:["Hike Walter Sisulu Botanical Garden","Bike the Delta Park trails","Walk Northcliff Ridge"],arts:["Johannesburg Art Gallery","Market on Main in Maboneng","Everard Read Gallery Rosebank"],food:["Neighbourgoods Market Braamfontein","Rosebank Sunday Market","Craft beer tour in Newtown"],wellness:["Morning run around Zoo Lake","Pilates in Parktown North","Sound bath in Parkhurst"],social:["Rooftop sundowners at Marble","Jazz at Xai Xai","Comedy at Parker's Joburg"]},
+  'durban':{any:["Walk the Golden Mile beachfront","Surf Addington Beach","Botanical Gardens walk","Valley of 1000 Hills day trip"],outdoor:["Surf Addington Beach","Snorkel at Aliwal Shoal","Botanical Gardens walk"],arts:["Durban Art Gallery","KwaMuhle Museum","BAT Centre arts hub"],food:["Bunny Chow trail on Florida Road","Essenwood Craft Market","Indian cuisine on Victoria Street"],wellness:["Spa at Sun Coast Casino","Beach yoga on the Golden Mile"],social:["Sundowners at The Oyster Box","Comedy at Barnyard Theatre"]},
+  'pretoria':{any:["Tour the Union Buildings","Voortrekker Monument","Hatfield precinct exploration","Cullinan Diamond Mine day trip","Pretoria Zoo walk"],outdoor:["Hike Roodeplaat Dam","Mountain bike Faerie Glen","Groenkloof Nature Reserve"],arts:["Pretoria Art Museum","Ditsong Museum","Freedom Park museum"],food:["Hatfield craft beer tour","Brooklyn Mall food market"],wellness:["Roodeplaat Nature Reserve walk","Yoga in Waterkloof"],social:["Comedy at Montecasino","Quiz night in Hatfield"]},
+  'pe':{any:["Addo Elephant Park game drive","Surf at Humewood Beach","Route 67 public art trail","Sardinia Bay Beach picnic"],outdoor:["Hike the Dolphin Trail","Kayak at Hobie Beach","Kragga Kamma Game Park"],arts:["Nelson Mandela Bay Museum","Route 67 mural trail"],food:["Boardwalk Casino restaurants","Humewood beachfront braai"],wellness:["Beach yoga at Hobie Beach","Sardinia Bay Coastal Reserve walk"],social:["Sundowners at Boardwalk","Quiz night in Newton Park"]},
+};
+
+const RETAILERS=[{name:'Mr Price',url:'https://www.mrp.com/en_za/clothing'},{name:'Cotton On',url:'https://cottonon.com/ZA/'},{name:'Woolworths',url:'https://www.woolworths.co.za/cat/Clothing'},{name:'H&M',url:'https://www2.hm.com/en_za/'},{name:'Superbalist',url:'https://superbalist.com/'},{name:'Zara SA',url:'https://www.zara.com/za/'}];
+
+const CURATED_TITLES=[
+  {title:'Dune: Part Two',year:'2024',series:false,platforms:['netflix','amazon'],genres:['28','878'],poster:'https://image.tmdb.org/t/p/w342/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg',desc:'Paul Atreides unites with the Fremen to seek revenge against those who destroyed his family.'},
+  {title:'Oppenheimer',year:'2023',series:false,platforms:['amazon'],genres:['18','28'],poster:'https://image.tmdb.org/t/p/w342/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',desc:'The story of J. Robert Oppenheimer and the creation of the atomic bomb.'},
+  {title:'Gladiator II',year:'2024',series:false,platforms:['netflix'],genres:['28','18'],poster:'https://image.tmdb.org/t/p/w342/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg',desc:'Lucius must enter the Colosseum to fight for the Rome he once knew.'},
+  {title:'Inside Out 2',year:'2024',series:false,platforms:['disney'],genres:['35'],poster:'https://image.tmdb.org/t/p/w342/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg',desc:'Riley enters high school and faces a whole new set of emotions.'},
+  {title:'The Wild Robot',year:'2024',series:false,platforms:['netflix'],genres:['35'],poster:'https://image.tmdb.org/t/p/w342/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg',desc:'A robot marooned on a wild island adapts to survive.'},
+  {title:'Deadpool & Wolverine',year:'2024',series:false,platforms:['disney'],genres:['28','35'],poster:'https://image.tmdb.org/t/p/w342/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg',desc:'Deadpool and Wolverine must work together to save the multiverse.'},
+  {title:'The Bear',year:'2022–',series:true,platforms:['disney'],genres:['35','18'],poster:'https://image.tmdb.org/t/p/w342/sHFlbKS3WLqMnp9t2ghADIJFnuQ.jpg',desc:'A young chef returns to Chicago to run the family restaurant.'},
+  {title:'Stranger Things',year:'2016–',series:true,platforms:['netflix'],genres:['878','27'],poster:'https://image.tmdb.org/t/p/w342/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',desc:'A boy disappears; his friends discover supernatural forces at work.'},
+  {title:'Severance',year:'2022–',series:true,platforms:['apple'],genres:['878','18'],poster:'https://image.tmdb.org/t/p/w342/tBBCPBuPyOTioLqOQQwqyHLBqBw.jpg',desc:'Employees have a chip implanted that separates work and personal memories.'},
+  {title:'The Last of Us',year:'2023–',series:true,platforms:['netflix'],genres:['18','878'],poster:'https://image.tmdb.org/t/p/w342/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg',desc:'A smuggler transports a teenager across a post-apocalyptic America.'},
+  {title:'Shogun',year:'2024–',series:true,platforms:['disney'],genres:['18','28'],poster:'https://image.tmdb.org/t/p/w342/7O4iVfOMQmdCSxhOg1WnzG1AgYB.jpg',desc:'A shipwrecked navigator becomes embroiled in feudal Japanese politics.'},
+  {title:'The Boys',year:'2019–',series:true,platforms:['amazon'],genres:['28','35'],poster:'https://image.tmdb.org/t/p/w342/stTEycfG9928HYGEISBFaG1ngjM.jpg',desc:'A team of vigilantes fights back against corrupt superheroes.'},
+  {title:'Fallout',year:'2024–',series:true,platforms:['amazon'],genres:['878','28'],poster:'https://image.tmdb.org/t/p/w342/bHuFfHiJX1FdBnQJkJKSU7bTqRv.jpg',desc:'A vault dweller emerges into a post-nuclear wasteland 200 years later.'},
+  {title:'Wednesday',year:'2022–',series:true,platforms:['netflix'],genres:['35','27'],poster:'https://image.tmdb.org/t/p/w342/jeGtaMwGxPmQN5xM4ClnwPQcNQz.jpg',desc:'Wednesday Addams solves supernatural mysteries at Nevermore Academy.'},
+  {title:'Slow Horses',year:'2022–',series:true,platforms:['apple'],genres:['18'],poster:'https://image.tmdb.org/t/p/w342/2ks0cHyXz1Y6fqyytG7oJQHd4xz.jpg',desc:'Exiled MI5 agents navigate bureaucracy and real danger.'},
+];
+const PL_LABELS={netflix:'Netflix',amazon:'Prime',disney:'Disney+',apple:'Apple TV+'};
+const STREAM_URLS={netflix:'https://www.netflix.com/search?q=',amazon:'https://www.primevideo.com/search/ref=atv_nb_sr?phrase=',disney:'https://www.disneyplus.com/search/',apple:'https://tv.apple.com/search?term='};
+
+const OUTFIT_DATA={
+  cold:{images:{men:{casual:['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=600&q=80','https://images.unsplash.com/photo-1516826957135-700dedea698c?w=600&q=80'],work:['https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=600&q=80','https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&q=80'],formal:['https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80','https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=600&q=80'],sport:['https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80','https://images.unsplash.com/photo-1546483875-ad9014c88eba?w=600&q=80'],any:['https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&q=80','https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80']},women:{casual:['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80','https://images.unsplash.com/photo-1548549557-dbe9155ac000?w=600&q=80'],work:['https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?w=600&q=80','https://images.unsplash.com/photo-1594938298603-c8148c4b4a95?w=600&q=80'],formal:['https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&q=80','https://images.unsplash.com/photo-1518310952931-b1de897abd40?w=600&q=80'],sport:['https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80','https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=600&q=80'],any:['https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&q=80','https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80']},neutral:{any:['https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80','https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=600&q=80'],casual:['https://images.unsplash.com/photo-1516826957135-700dedea698c?w=600&q=80','https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80'],work:['https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&q=80','https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?w=600&q=80'],formal:['https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80','https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&q=80'],sport:['https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80','https://images.unsplash.com/photo-1546483875-ad9014c88eba?w=600&q=80']}},
+  items:{men:{any:['Heavy overcoat','Thermal base layer','Dark jeans','Chelsea boots','Scarf & beanie'],casual:['Chunky knit sweater','Slim chinos','Sneakers','Puffer jacket'],work:['Tailored wool coat','Roll-neck knit','Smart trousers','Derby shoes'],formal:['Black overcoat','Wool suit','Dress shirt','Oxford shoes'],sport:['Thermal tights','Long-sleeve layer','Wind jacket','Trail shoes']},women:{any:['Long wool coat','Turtleneck','Thick leggings','Ankle boots','Knit scarf'],casual:['Oversized knit','Mom jeans','Platform boots','Long puffer'],work:['Structured blazer coat','Polo-neck blouse','Wide-leg trousers','Block heels'],formal:['Floor-length wool dress','Cashmere wrap','Heeled boots'],sport:['Fleece-lined leggings','Thermal top','Windbreaker','Trail shoes']},neutral:{any:['Parka or puffer','Layered base + mid','Straight-leg jeans','Boots','Wool beanie'],casual:['Hoodie + fleece','Straight jeans','Clean sneakers','Beanie'],work:['Smart pea coat','Knit sweater','Straight trousers','Loafers'],formal:['Long formal coat','Monochrome suit','Dress shoes'],sport:['Thermal tights','Long-sleeve layer','Windproof jacket','Trail runners']}}},
+  hot:{images:{men:{casual:['https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&q=80','https://images.unsplash.com/photo-1532453288672-3a27e9be9efd?w=600&q=80'],work:['https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&q=80','https://images.unsplash.com/photo-1609505848912-b7c3b8b4beda?w=600&q=80'],formal:['https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80','https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=600&q=80'],sport:['https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=600&q=80','https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80'],any:['https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=600&q=80','https://images.unsplash.com/photo-1621072156002-e2fccdc0b176?w=600&q=80']},women:{casual:['https://images.unsplash.com/photo-1529139574466-a303027614b2?w=600&q=80','https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&q=80'],work:['https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?w=600&q=80','https://images.unsplash.com/photo-1594938298603-c8148c4b4a95?w=600&q=80'],formal:['https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&q=80','https://images.unsplash.com/photo-1518310952931-b1de897abd40?w=600&q=80'],sport:['https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80','https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=600&q=80'],any:['https://images.unsplash.com/photo-1502716119720-b23a93e5fe1b?w=600&q=80','https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80']},neutral:{any:['https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=600&q=80','https://images.unsplash.com/photo-1529139574466-a303027614b2?w=600&q=80'],casual:['https://images.unsplash.com/photo-1516826957135-700dedea698c?w=600&q=80','https://images.unsplash.com/photo-1529139574466-a303027614b2?w=600&q=80'],work:['https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=600&q=80','https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?w=600&q=80'],formal:['https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80','https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&q=80'],sport:['https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=600&q=80','https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80']}},
+  items:{men:{any:['Breathable linen shirt','Chino shorts','Sandals','Sunglasses','Sunscreen'],casual:['Graphic tee','Denim shorts','Slides','Cap'],work:['Linen shirt','Chinos','Loafers'],formal:['Lightweight suit','Open-collar shirt','Oxford shoes'],sport:['Breathable tank','Running shorts','Training shoes']},women:{any:['Flowy sundress','Sandals','Wide-brim hat','Sunscreen'],casual:['Camisole top','Mini skirt','Sandals','Tote bag'],work:['Sleeveless blouse','Wide-leg linen trousers','Mules'],formal:['Chiffon maxi dress','Heeled sandals','Clutch'],sport:['Sports bra','Running shorts','Lightweight trainers']},neutral:{any:['Breathable tee','Linen shorts','Sandals','Sunglasses'],casual:['Crop tee','Shorts','Flip flops','Cap'],work:['Short-sleeve button shirt','Tailored shorts','Smart sandals'],formal:['Linen suit','Dress sandals'],sport:['Moisture-wicking tee','Running shorts','Trainers']}}},
+  rain:{images:{men:{any:['https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&q=80','https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80'],casual:['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=600&q=80','https://images.unsplash.com/photo-1516826957135-700dedea698c?w=600&q=80'],work:['https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=600&q=80','https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&q=80'],formal:['https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80','https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=600&q=80'],sport:['https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80','https://images.unsplash.com/photo-1546483875-ad9014c88eba?w=600&q=80']},women:{any:['https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&q=80','https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80'],casual:['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80','https://images.unsplash.com/photo-1548549557-dbe9155ac000?w=600&q=80'],work:['https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?w=600&q=80','https://images.unsplash.com/photo-1594938298603-c8148c4b4a95?w=600&q=80'],formal:['https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&q=80','https://images.unsplash.com/photo-1518310952931-b1de897abd40?w=600&q=80'],sport:['https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80','https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=600&q=80']},neutral:{any:['https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80','https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=600&q=80'],casual:['https://images.unsplash.com/photo-1516826957135-700dedea698c?w=600&q=80','https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80'],work:['https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&q=80','https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?w=600&q=80'],formal:['https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80','https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&q=80'],sport:['https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80','https://images.unsplash.com/photo-1546483875-ad9014c88eba?w=600&q=80']}},
+  items:{men:{any:['Waterproof rain jacket','Dark chinos','Waterproof boots','Umbrella'],casual:['Anorak jacket','Hoodie','Dark jeans','Chunky sneakers'],work:['Waterproof trench','Smart trousers','Dress boots'],formal:['Classic trench coat','Dark suit underneath'],sport:['Waterproof running jacket','Compression tights','Trail shoes']},women:{any:['Trench coat','Waterproof boots','Dark jeans','Compact umbrella'],casual:['Oversized rain mac','Ribbed turtleneck','Jeans','Chelsea boots'],work:['Belted trench coat','Smart blouse','Tailored trousers'],formal:['Elegant rain mac','Formal dress underneath'],sport:['Running rain jacket','Thermal leggings','Grip trail shoes']},neutral:{any:['Rain mac','Water-resistant trousers','Rubber boots','Umbrella'],casual:['Anorak','Casual sweater','Straight jeans','Rubber boots'],work:['Smart rain coat','Work trousers','Low waterproof boots'],formal:['Sophisticated trench','Formal wear underneath'],sport:['Waterproof sport jacket','Base layer','Grip trail runners']}}},
+  mild:{images:{men:{any:['https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=600&q=80','https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&q=80'],casual:['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=600&q=80','https://images.unsplash.com/photo-1532453288672-3a27e9be9efd?w=600&q=80'],work:['https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&q=80','https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=600&q=80'],formal:['https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80','https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=600&q=80'],sport:['https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=600&q=80','https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80']},women:{any:['https://images.unsplash.com/photo-1502716119720-b23a93e5fe1b?w=600&q=80','https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80'],casual:['https://images.unsplash.com/photo-1529139574466-a303027614b2?w=600&q=80','https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&q=80'],work:['https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?w=600&q=80','https://images.unsplash.com/photo-1594938298603-c8148c4b4a95?w=600&q=80'],formal:['https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&q=80','https://images.unsplash.com/photo-1518310952931-b1de897abd40?w=600&q=80'],sport:['https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80','https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=600&q=80']},neutral:{any:['https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=600&q=80','https://images.unsplash.com/photo-1529139574466-a303027614b2?w=600&q=80'],casual:['https://images.unsplash.com/photo-1516826957135-700dedea698c?w=600&q=80','https://images.unsplash.com/photo-1529139574466-a303027614b2?w=600&q=80'],work:['https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=600&q=80','https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?w=600&q=80'],formal:['https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80','https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&q=80'],sport:['https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=600&q=80','https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80']}},
+  items:{men:{any:['Light jacket','Button-down shirt','Slim chinos','Sneakers'],casual:['Clean t-shirt','Slim jeans','White sneakers','Light bomber jacket'],work:['Oxford shirt','Slim chinos','Leather loafers'],formal:['Classic suit','Dress shirt','Tie & pocket square','Oxford shoes'],sport:['Training t-shirt','Track pants','Running shoes']},women:{any:['Light cardigan','Casual blouse','Straight jeans','Ankle boots'],casual:['Relaxed blouse','Mom jeans','Chunky sneakers','Denim jacket'],work:['Blouse','Tailored trousers','Ballet flats or block heels'],formal:['Cocktail dress','Strappy heels','Simple clutch'],sport:['Sports bra or top','Leggings','Training shoes']},neutral:{any:['Light jacket or hoodie','Jeans','Clean sneakers'],casual:['Plain tee','Straight jeans','Sneakers','Denim jacket'],work:['Clean shirt','Tailored trousers','Smart shoes'],formal:['Formal suit or dress','Dress shoes'],sport:['Moisture-wicking tee','Joggers','Trainers']}}},
+};
+
+const FACTS=[
+  "South Africa is the only country to have voluntarily dismantled its nuclear weapons programme.",
+  "South Africa has 11 official languages — the most of any African country.",
+  "Kruger National Park is larger than the entire country of Wales.",
+  "South Africa produces about 70% of the world's platinum supply.",
+  "Table Mountain is approximately 600 million years old.",
+  "Cape Town's Robben Island is a UNESCO World Heritage Site.",
+  "South Africa was the first African country to legalise same-sex marriage, in 2006.",
+  "Rooibos tea grows only in the Cederberg mountains of the Western Cape.",
+  "South Africa has three capital cities: Pretoria, Cape Town, and Bloemfontein.",
+  "The Cradle of Humankind contains hominid fossils over 3.5 million years old.",
+  "Groot Constantia wine estate has been producing wine since 1685.",
+  "Nando's was founded in Johannesburg in 1987.",
+  "Honey never spoils — 3,000-year-old honey has been found in Egyptian tombs.",
+  "A group of flamingos is called a flamboyance.",
+  "Octopuses have three hearts, blue blood, and can edit their own RNA.",
+  "The shortest war in history lasted 38 minutes: the Anglo-Zanzibar War of 1896.",
+  "Oxford University is older than the Aztec Empire.",
+  "Wombats are the only animals known to produce cube-shaped droppings.",
+  "A cloud can weigh over a million kilograms yet stays aloft due to tiny droplets.",
+  "Cleopatra lived closer to the Moon landing than to the building of the Great Pyramid.",
+];
+
+const FALLBACK_QUIZZES=[
+  {q:'What is the administrative capital of South Africa?',opts:['Cape Town','Pretoria','Johannesburg','Bloemfontein'],a:'Pretoria'},
+  {q:'Which South African won the Nobel Peace Prize in 1993?',opts:['Desmond Tutu','Steve Biko','Nelson Mandela','Oliver Tambo'],a:'Nelson Mandela'},
+  {q:'What is the currency of South Africa?',opts:['Dollar','Pound','Rand','Shilling'],a:'Rand'},
+  {q:'Which city is known as eGoli — City of Gold?',opts:['Cape Town','Durban','Pretoria','Johannesburg'],a:'Johannesburg'},
+  {q:'How many official languages does South Africa have?',opts:['8','9','11','13'],a:'11'},
+];
+
+const DEMO_RESTAURANTS=[
+  {name:"Mzoli's Meat",cuisine:'Braai',addr:'Gugulethu',dist:3.2,delivery:false},
+  {name:'The Test Kitchen',cuisine:'Fine Dining',addr:'Woodstock',dist:5.1,delivery:false},
+  {name:"Kleinsky's Deli",cuisine:'Deli',addr:'Sea Point',dist:6.8,delivery:true},
+  {name:'The Hungry Herbivore',cuisine:'Vegan',addr:'Observatory',dist:4.3,delivery:true},
+  {name:'Harbour House',cuisine:'Seafood',addr:'Waterfront',dist:7.5,delivery:false},
+  {name:'The Pot Luck Club',cuisine:'Asian Fusion',addr:'Woodstock',dist:4.8,delivery:false},
+];
+const REST_IMGS=['https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=70','https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&q=70','https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=70','https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400&q=70','https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?w=400&q=70','https://images.unsplash.com/photo-1544148103-0773bf10d330?w=400&q=70'];
+const ACT_IMGS=['https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=600&q=80','https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600&q=80','https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=600&q=80','https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80','https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=600&q=80'];
+
+/* ═══ HELPERS ════════════════════════════════════════════════════════════════ */
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371,dL=(lat2-lat1)*Math.PI/180,dO=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)**2;
+  return(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1);
+}
+function decodeHTML(h){const t=document.createElement('textarea');t.innerHTML=h;return t.value;}
+function randPick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+/* ═══ SCROLL REVEAL HOOK ══════════════════════════════════════════════════════ */
+function useReveal(){
+  const ref=useRef(null);
+  useEffect(()=>{
+    const el=ref.current;if(!el)return;
+    const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting){el.classList.add('in');obs.unobserve(el);}},{threshold:0.1});
+    obs.observe(el);
+    return()=>obs.disconnect();
+  },[]);
+  return ref;
+}
+function Reveal({children,delay='',className=''}){
+  const ref=useReveal();
+  return <div ref={ref} className={`reveal ${delay} ${className}`}>{children}</div>;
+}
+
+/* ═══ WORD CYCLE ══════════════════════════════════════════════════════════════ */
+const CYCLE_WORDS=['deciding.','choosing.','wondering.','scrolling.'];
+function WordCycle(){
+  const [idx,setIdx]=useState(0);
+  const [phase,setPhase]=useState('idle'); // idle | exit | enter
+  const cur=CYCLE_WORDS[idx];
+  useEffect(()=>{
+    const t=setInterval(()=>{
+      setPhase('exit');
+      setTimeout(()=>{setIdx(i=>(i+1)%CYCLE_WORDS.length);setPhase('enter');},400);
+      setTimeout(()=>setPhase('idle'),850);
+    },2600);
+    return()=>clearInterval(t);
+  },[]);
+  return(
+    <span className="word-slot italic text-gold">
+      <span className={phase==='exit'?'word-exit':phase==='enter'?'word-enter':''}>{cur}</span>
+    </span>
+  );
+}
+
+/* ═══ COUNTER ═════════════════════════════════════════════════════════════════ */
+function Counter({target,suffix='',duration=1400,trigger}){
+  const [val,setVal]=useState(0);
+  useEffect(()=>{
+    if(!trigger)return;
+    const s=performance.now();
+    function step(ts){
+      const p=Math.min((ts-s)/duration,1);
+      const e=1-Math.pow(1-p,3);
+      setVal(Math.round(e*target));
+      if(p<1)requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  },[trigger,target,duration]);
+  return <>{val}{suffix}</>;
+}
+
+/* ═══ NAV ══════════════════════════════════════════════════════════════════════ */
+function Nav({onTabSelect}){
+  const [scrolled,setScrolled]=useState(false);
+  const [mobileOpen,setMobileOpen]=useState(false);
+  useEffect(()=>{
+    const h=()=>setScrolled(window.scrollY>20);
+    window.addEventListener('scroll',h,{passive:true});
+    return()=>window.removeEventListener('scroll',h);
+  },[]);
+  const gotoProducts=()=>{setMobileOpen(false);document.getElementById('products')?.scrollIntoView({behavior:'smooth',block:'start'});};
+  const gotoProductTab=tab=>{setMobileOpen(false);document.getElementById('products')?.scrollIntoView({behavior:'smooth',block:'start'});};
+  return(
+    <>
+    <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center px-4 md:px-8 transition-all duration-300 ${scrolled?'bg-bg/92 backdrop-blur-xl border-b border-white/[.07]':'border-b border-transparent'}`} style={{height:64}}>
+      <div className="font-display font-bold text-xl text-ink tracking-tight flex items-center gap-2 flex-shrink-0">
+        <span className="w-2 h-2 rounded-full bg-gold animate-pulse-dot inline-block"/>
+        Anything
+      </div>
+      {/* desktop links — each scrolls to #products */}
+      <div className="hidden md:flex items-center gap-1 mx-auto">
+        {[['eat','Eat'],['wear','Wear'],['watch','Watch'],['do','Do']].map(([t,l])=>(
+          <button key={t} onClick={()=>gotoProductTab(t)} className="px-3 py-2 text-sm font-medium text-ink3 rounded-full hover:text-ink hover:bg-card transition-all">{l}</button>
+        ))}
+      </div>
+      <button onClick={gotoProducts} className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-gold text-bg text-sm font-semibold rounded-full hover:bg-gold2 transition-colors flex-shrink-0">
+        Help me decide <Icon name="arrowr" size={14}/>
+      </button>
+      {/* mobile hamburger */}
+      <button onClick={()=>setMobileOpen(o=>!o)} className="ml-auto md:hidden p-2 text-ink2">
+        {mobileOpen?<Icon name="x" size={20}/>:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>}
+      </button>
+    </nav>
+    {/* mobile menu */}
+    {mobileOpen&&(
+      <div className="fixed top-16 left-0 right-0 z-40 bg-card border-b border-white/10 p-4 flex flex-col gap-2">
+        {[['eat','Eat','utensils'],['wear','Wear','shirt'],['watch','Watch','tv'],['do','Do','compass']].map(([t,l,ic])=>(
+          <button key={t} onClick={()=>gotoProductTab(t)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-left text-ink2 hover:bg-card2 hover:text-ink transition-all">
+            <Icon name={ic} size={16}/>{l}
+          </button>
+        ))}
+        <button onClick={gotoProducts} className="mt-2 w-full py-3 bg-gold text-bg font-semibold rounded-xl text-sm">Help me decide</button>
+      </div>
+    )}
+    </>
+  );
+}
+
+/* ═══ HERO ═════════════════════════════════════════════════════════════════════ */
+function Hero({onDecide}){
+  const [statTrigger,setStatTrigger]=useState(false);
+  useEffect(()=>{setTimeout(()=>setStatTrigger(true),600);},[]);
+  return(
+    <section id="hero" className="relative min-h-screen flex flex-col items-center justify-center text-center px-5 pt-24 pb-16 overflow-hidden">
+      {/* bg glow */}
+      <div className="absolute inset-0 pointer-events-none" style={{background:'radial-gradient(ellipse 80% 55% at 50% 0%,rgba(200,169,110,0.09) 0%,transparent 70%), radial-gradient(ellipse 40% 40% at 20% 80%,rgba(98,70,234,0.06) 0%,transparent 60%)'}}/>
+      {/* grid */}
+      <div className="absolute inset-0 pointer-events-none opacity-[.025]" style={{backgroundImage:'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)',backgroundSize:'56px 56px',maskImage:'radial-gradient(ellipse 80% 80% at 50% 50%,black 0%,transparent 100%)'}}/>
+
+      <h1 className="font-display font-black leading-none tracking-tight text-ink mb-5" style={{fontSize:'clamp(2.6rem,8vw,6.5rem)',letterSpacing:'-.03em',maxWidth:860,lineHeight:1.0}}>
+        Spend less time <WordCycle/><br/>
+        <span className="text-ink">More time living.</span>
+      </h1>
+
+      <p className="text-ink2 leading-relaxed mb-8 max-w-md" style={{fontSize:'clamp(.95rem,2vw,1.15rem)'}}>
+        You make thousands of decisions a day. Most don't deserve your attention. Anything decides for you — instantly, every day.
+      </p>
+
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
+        <button onClick={()=>document.getElementById('products')?.scrollIntoView({behavior:'smooth',block:'start'})} className="flex items-center gap-2 px-7 py-3.5 bg-gold text-bg font-semibold rounded-full text-base hover:bg-gold2 transition-all hover:shadow-[0_0_32px_rgba(200,169,110,.35)] hover:-translate-y-0.5">
+          Help me decide <Icon name="arrowr" size={16}/>
+        </button>
+        <button onClick={()=>document.getElementById('cost')?.scrollIntoView({behavior:'smooth'})} className="px-6 py-3.5 border border-white/15 text-ink2 font-medium rounded-full text-sm hover:border-white/25 hover:text-ink hover:bg-card transition-all">
+          See time wasted
+        </button>
+      </div>
+
+      <div className="flex items-center gap-6 md:gap-10 pt-6 border-t border-white/[.06] flex-wrap justify-center">
+        {[
+          {id:'s1',target:290,suffix:' hrs',label:'per year deciding meals'},
+          {id:'s2',target:47,suffix:' min',label:'lost per Netflix session'},
+          {id:'s3',target:23,suffix:'s',label:'avg. time to a decision'},
+        ].map(s=>(
+          <div key={s.id} className="text-center">
+            <div className="font-display font-bold text-gold leading-none text-2xl md:text-3xl">
+              <Counter target={s.target} suffix={s.suffix} trigger={statTrigger}/>
+            </div>
+            <div className="text-xs text-ink3 mt-1">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-ink3" style={{fontSize:10,letterSpacing:'.1em',textTransform:'uppercase'}}>
+        <div className="w-px h-8 bg-gradient-to-b from-white/20 to-transparent animate-pulse-dot"/>
+        scroll
+      </div>
+    </section>
+  );
+}
+
+/* ═══ COST SECTION ══════════════════════════════════════════════════════════════ */
+function CostSection(){
+  const [triggered,setTriggered]=useState(false);
+  const ref=useRef(null);
+  useEffect(()=>{
+    const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting){setTriggered(true);obs.disconnect();}},{threshold:0.25});
+    if(ref.current)obs.observe(ref.current);
+    return()=>obs.disconnect();
+  },[]);
+  const cards=[
+    {icon:'utensils',color:'#E8612A',target:290,pct:100,bold:'deciding what to eat',rest:'. That\'s a full 12-day holiday. Every year. Gone.'},
+    {icon:'tv',color:'#6246EA',target:180,pct:62,bold:'lost scrolling',rest:' Netflix without watching anything. Every single year.'},
+    {icon:'shirt',color:'#1F9B6E',target:127,pct:44,bold:'nothing to wear',rest:' — standing in front of a full wardrobe, every single morning.'},
+    {icon:'compass',color:'#C4970A',target:95,pct:33,bold:'Time lost to indecision',rest:' — activities never planned, weekends wasted, opportunities missed.'},
+  ];
+  return(
+    <section id="cost" className="bg-bg2 py-14 md:py-20">
+      <div className="max-w-6xl mx-auto px-4 md:px-8">
+        <Reveal className="mb-10">
+          <div className="text-xs font-semibold tracking-widest uppercase text-ink3 mb-3">The real cost</div>
+          <h2 className="font-display font-bold leading-tight text-ink" style={{fontSize:'clamp(1.75rem,4vw,3rem)'}}>
+            This is what indecisiveness<br/>is <em className="italic text-gold">costing you in time.</em>
+          </h2>
+        </Reveal>
+        <div ref={ref} className="grid grid-cols-2 lg:grid-cols-4 gap-0.5 mb-0.5">
+          {cards.map((c,i)=>(
+            <div key={i} className="bg-card p-6 md:p-8 relative overflow-hidden group">
+              <div className="absolute top-0 left-0 right-0 h-0.5" style={{background:c.color}}/>
+              <div className="mb-4 text-ink3 group-hover:text-ink transition-colors">
+                <Icon name={c.icon} size={22} cls="text-current"/>
+              </div>
+              <div className="font-display font-bold leading-none text-ink mb-2" style={{fontSize:'clamp(2.2rem,4vw,3.2rem)'}}>
+                <Counter target={c.target} suffix=" hrs" duration={1400} trigger={triggered}/>
+              </div>
+              <div className="text-sm text-ink2 leading-relaxed mb-4">
+                <strong className="text-ink font-semibold">{c.bold}</strong>{c.rest}
+              </div>
+              <div className="cost-bar">
+                <div className="cost-bar-fill" style={{background:c.color,width:triggered?`${c.pct}%`:'0%',transitionDelay:`${i*120}ms`}}/>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-card2 border-t-2 border-gold p-6 md:p-8 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="text-sm text-ink2">Total hours lost to indecision, annually</div>
+            <div className="text-xs text-ink3 mt-1">That's 29 full days. Every year. Recovered in seconds with Anything.</div>
+          </div>
+          <div className="font-display font-bold text-gold" style={{fontSize:'clamp(2rem,5vw,2.8rem)'}}>
+            <Counter target={692} suffix=" hrs" duration={1800} trigger={triggered}/>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══ HOW IT WORKS ═══════════════════════════════════════════════════════════════ */
+function HowSection(){
+  const steps=[
+    {n:'01',icon:'utensils',title:'Choose what you\'re deciding',desc:'Eat, wear, watch, or do. One tap and you\'re in the right flow.'},
+    {n:'02',icon:'lightbulb',title:'Answer two or three questions',desc:'We ask only what matters. No forms, no accounts, no rabbit holes.'},
+    {n:'03',icon:'zap',title:'Get your answer. Done.',desc:'A clear recommendation. That decision is behind you. Go live.'},
+  ];
+  return(
+    <section id="how" className="py-14 md:py-20">
+      <div className="max-w-6xl mx-auto px-4 md:px-8">
+        <Reveal className="mb-10 md:mb-12">
+          <div className="text-xs font-semibold tracking-widest uppercase text-ink3 mb-3">How it works</div>
+          <h2 className="font-display font-bold leading-tight text-ink" style={{fontSize:'clamp(1.75rem,4vw,3rem)'}}>
+            Three steps to a decision.
+          </h2>
+          <p className="text-ink2 mt-2 text-sm md:text-base">Average time from landing to answer: <strong className="text-gold">23 seconds.</strong></p>
+        </Reveal>
+        {/* horizontal on desktop, vertical on mobile */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-0.5">
+          {steps.map((s,i)=>(
+            <Reveal key={i} delay={`d${i+1}`}>
+              <div className="bg-card p-6 md:p-8 relative group h-full">
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gold opacity-0 group-hover:opacity-100 transition-opacity"/>
+                <div className="flex items-start gap-4">
+                  <div className="font-display font-bold text-white/10 group-hover:text-gold/30 transition-colors leading-none flex-shrink-0" style={{fontSize:'2.5rem'}}>{s.n}</div>
+                  <div>
+                    <div className="mb-3 text-ink3 group-hover:text-gold transition-colors">
+                      <Icon name={s.icon} size={20}/>
+                    </div>
+                    <div className="font-display font-semibold text-ink text-lg mb-2">{s.title}</div>
+                    <div className="text-sm text-ink2 leading-relaxed">{s.desc}</div>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══ PRODUCTS + DECISION ENGINE (native, combined) ═════════════════════════════ */
+function ProductsSection({location,setLocModalOpen}){
+  const [activeTab,setActiveTab]=useState(null); // null = no panel open yet
+  const panelRef=useRef(null);
+
+  const products=[
+    {id:'eat', title:'Eat',  icon:'utensils',color:'#E8612A',colorClass:'text-eat', bgClass:'bg-eat/10', img:'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=900&q=80&auto=format&fit=crop', desc:'End the "what\'s for dinner" debate. Recipe ideas or restaurants near you.'},
+    {id:'wear',title:'Wear', icon:'shirt',   color:'#1F9B6E',colorClass:'text-wear',bgClass:'bg-wear/10',img:'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=900&q=80&auto=format&fit=crop', desc:'Live weather + your occasion. Leave the house with certainty.'},
+    {id:'watch',title:'Watch',icon:'tv',     color:'#6246EA',colorClass:'text-watch',bgClass:'bg-watch/10',img:'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=900&q=80&auto=format&fit=crop', desc:'No more 45-minute scroll sessions. Your next binge, in seconds.'},
+    {id:'do',  title:'Do',   icon:'compass', color:'#C4970A',colorClass:'text-do',  bgClass:'bg-do/10',  img:'https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=900&q=80&auto=format&fit=crop', desc:'Free time is precious. Stop wasting it wondering what to do with it.'},
+  ];
+
+  const selectTab=id=>{
+    setActiveTab(id);
+    // Scroll to panel after state update
+    setTimeout(()=>{
+      panelRef.current?.scrollIntoView({behavior:'smooth',block:'start'});
+    },80);
+  };
+
+  const active=products.find(p=>p.id===activeTab);
+
+  return(
+    <section id="products" className="py-14 md:py-20">
+      {/* ── Section header ── */}
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-8">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 md:mb-10">
+          <Reveal>
+            <div className="text-xs font-semibold tracking-widest uppercase text-ink3 mb-3">The platform</div>
+            <h2 className="font-display font-bold leading-tight text-ink" style={{fontSize:'clamp(1.75rem,4vw,3rem)'}}>
+              Four decisions. <em className="italic text-gold">Zero friction.</em>
+            </h2>
+          </Reveal>
+          <Reveal delay="d2">
+            <p className="text-ink2 text-sm md:text-right max-w-xs">Choose a category. Get your answer. Done in under 30 seconds.</p>
+          </Reveal>
+        </div>
+
+        {/* ── 4 product cards ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0.5 mb-0">
+          {products.map((p,i)=>{
+            const isActive=activeTab===p.id;
+            return(
+              <Reveal key={p.id} delay={`d${i+1}`}>
+                <div
+                  onClick={()=>selectTab(p.id)}
+                  className={`product-card relative overflow-hidden cursor-pointer group transition-all duration-300 ${isActive?'ring-2 ring-inset':''}`}
+                  style={{height:340,outlineColor:p.color}}
+                >
+                  {/* active indicator bar */}
+                  <div className={`card-accent absolute top-0 left-0 right-0 h-1 z-10 transition-transform duration-300 ${isActive?'scale-x-100':'group-hover:scale-x-100'}`} style={{background:p.color,transformOrigin:'left'}}/>
+                  <img src={p.img} alt={p.title} className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105" style={{filter:isActive?'brightness(.35) saturate(.6)':'brightness(.5) saturate(.7)'}}/>
+                  <div className="absolute inset-0" style={{background:'linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.15) 55%,transparent 100%)'}}/>
+                  {/* active colour wash */}
+                  <div className={`absolute inset-0 transition-opacity duration-300 ${isActive?'opacity-[.12]':'opacity-0 group-hover:opacity-[.06]'}`} style={{background:p.color}}/>
+                  <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
+                    <div className="text-[10px] font-semibold tracking-widest uppercase mb-1" style={{color:'rgba(255,255,255,.45)'}}>Anything</div>
+                    <div className="font-display font-bold text-white leading-none mb-2" style={{fontSize:'2.5rem'}}>{p.title}</div>
+                    <p className="card-desc text-sm leading-relaxed mb-3" style={{color:'rgba(255,255,255,.65)',maxWidth:220}}>{p.desc}</p>
+                    <div className={`card-cta inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 ${isActive?'bg-white/20 text-white border border-white/40':'border border-white/25 text-white hover:bg-white/15'}`}>
+                      {isActive?<><Icon name="check" size={11}/>Selected</>:<>Decide now <Icon name="arrowr" size={11}/></>}
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            );
+          })}
+        </div>
+
+        {/* ── Inline decision panel — no box/widget feel ── */}
+        {activeTab&&(
+          <div ref={panelRef} key={activeTab} style={{animation:'fade-up .35s ease both'}}>
+            {/* seamless connector bar in active colour */}
+            <div className="h-1" style={{background:active?.color}}/>
+            {/* full-width content area, same bg as section, no card border */}
+            <div className="bg-bg2 border-x border-b border-white/[.06]" style={{borderRadius:'0 0 24px 24px'}}>
+              {/* tab switcher at top of panel */}
+              <div className="flex items-center gap-0 border-b border-white/[.06] overflow-x-auto">
+                {products.map(p=>(
+                  <button key={p.id} onClick={()=>setActiveTab(p.id)}
+                    className={`flex items-center gap-2 px-5 py-4 text-sm font-semibold border-b-2 transition-all whitespace-nowrap flex-shrink-0 ${activeTab===p.id?`border-current ${p.colorClass}`:'border-transparent text-ink3 hover:text-ink'}`}
+                    style={activeTab===p.id?{borderBottomColor:p.color}:{}}
+                  >
+                    <Icon name={p.icon} size={15}/>{p.title}
+                  </button>
+                ))}
+              </div>
+              {/* content area — wide, breathable, no inner box */}
+              <div className="px-6 py-8 md:px-10 md:py-10 max-w-4xl">
+                {activeTab==='eat'&&<EatPane location={location} onChangeLocation={()=>setLocModalOpen(true)}/>}
+                {activeTab==='wear'&&<WearPane location={location} onChangeLocation={()=>setLocModalOpen(true)}/>}
+                {activeTab==='watch'&&<WatchPane/>}
+                {activeTab==='do'&&<DoPane location={location} onChangeLocation={()=>setLocModalOpen(true)}/>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Try it now CTA (shown before any selection) ── */}
+        {!activeTab&&(
+          <Reveal>
+            <div className="mt-0 border-t border-white/[.06] py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div>
+                <div className="font-display font-semibold text-ink text-xl mb-1">Ready to stop deciding?</div>
+                <div className="text-sm text-ink2">Pick a category above and get your answer in under 30 seconds.</div>
+              </div>
+              <button onClick={()=>selectTab('eat')} className="flex items-center gap-2 px-7 py-3.5 bg-gold text-bg font-semibold rounded-full text-sm hover:bg-gold2 transition-all hover:shadow-[0_0_24px_rgba(200,169,110,.3)] flex-shrink-0">
+                Try it now <Icon name="arrowr" size={14}/>
+              </button>
+            </div>
+          </Reveal>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ═══ DECISION ENGINE PANELS ════════════════════════════════════════════════════ */
+
+/* Chip component */
+function Chip({label,active,onClick,colorClass='on-gold',icon}){
+  return(
+    <button onClick={onClick} className={`chip ${active?colorClass:''}`}>
+      {icon&&<Icon name={icon} size={12} cls="mr-1 inline"/>}{label}
+    </button>
+  );
+}
+
+/* Loading state */
+function Loading({color='#C8A96E'}){
+  return(
+    <div className="flex flex-col items-center justify-center py-12 gap-3">
+      <div className="w-7 h-7 rounded-full border-2 border-transparent animate-spin-slow" style={{borderTopColor:color}}/>
+      <p className="text-xs text-ink3">Finding your answer…</p>
+    </div>
+  );
+}
+
+/* ── EAT PANE ── */
+function EatPane({location,onChangeLocation}){
+  const [view,setView]=useState('fork'); // fork | dine | takeout
+  const [cuisine,setCuisine]=useState('');
+  const [meal,setMeal]=useState('');
+  const [fridgeItems,setFridgeItems]=useState([]);
+  const [fridgeInput,setFridgeInput]=useState('');
+  const [recipe,setRecipe]=useState(null);
+  const [recipeLoading,setRecipeLoading]=useState(false);
+  const [recipeError,setRecipeError]=useState(false);
+  const [ingOpen,setIngOpen]=useState(false);
+  const [restaurants,setRestaurants]=useState(null);
+  const [restLoading,setRestLoading]=useState(false);
+  const [radius,setRadius]=useState(5);
+  const radTimerRef=useRef(null);
+
+  const loadRecipe=useCallback(async(cuisineVal,mealVal)=>{
+    setRecipeLoading(true);setRecipeError(false);setRecipe(null);setIngOpen(false);
+    try{
+      const cat=cuisineVal??cuisine;
+      let url=cat
+        ?`https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(cat)}`
+        :`https://www.themealdb.com/api/json/v1/1/random.php`;
+      const r=await fetch(url);const d=await r.json();
+      const meals=d.meals||[];
+      if(!meals.length)throw new Error('empty');
+      let full;
+      if(cat){
+        const pick=meals[Math.floor(Math.random()*Math.min(meals.length,20))];
+        const r2=await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${pick.idMeal}`);
+        const d2=await r2.json();full=d2.meals?.[0];
+      }else{full=meals[0];}
+      if(!full)throw new Error('no full');
+      setRecipe(full);
+    }catch(e){setRecipeError(true);}
+    setRecipeLoading(false);
+  },[cuisine]);
+
+  const loadTakeout=useCallback(async(r)=>{
+    const rad=r??radius;
+    setRestLoading(true);setRestaurants(null);
+    const{lat,lon}=location;
+    const radiusM=rad*1000;
+    const q=`[out:json][timeout:15];(node["amenity"="restaurant"](around:${radiusM},${lat},${lon});node["amenity"="fast_food"](around:${radiusM},${lat},${lon}););out body 10;`;
+    try{
+      const res=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'}});
+      const data=await res.json();
+      const places=(data.elements||[]).filter(p=>p.tags?.name).slice(0,6);
+      if(places.length){
+        setRestaurants(places.map((p,i)=>({
+          name:p.tags.name,
+          cuisine:p.tags.cuisine||'Restaurant',
+          addr:p.tags['addr:street']||location.label,
+          dist:haversine(lat,lon,p.lat||lat,p.lon||lon),
+          delivery:p.tags.delivery==='yes',
+          phone:p.tags.phone,
+          lat:p.lat||lat,lon:p.lon||lon,
+          img:REST_IMGS[i%REST_IMGS.length],
+        })));
+      }else throw new Error('empty');
+    }catch(e){
+      setRestaurants(DEMO_RESTAURANTS.map((d,i)=>({...d,img:REST_IMGS[i%REST_IMGS.length],lat:location.lat+((i%3)*.01),lon:location.lon+((i%3)*.01)})));
+    }
+    setRestLoading(false);
+  },[location,radius]);
+
+  const goView=v=>{
+    setView(v);
+    if(v==='dine'&&!recipe&&!recipeLoading)loadRecipe('','');
+    if(v==='takeout')loadTakeout(radius);
+  };
+
+  const addIngredient=()=>{
+    const v=fridgeInput.trim().toLowerCase();
+    if(!v||fridgeItems.includes(v))return;
+    setFridgeItems(i=>[...i,v]);setFridgeInput('');
+  };
+  const searchFridge=async()=>{
+    setRecipeLoading(true);setRecipeError(false);setRecipe(null);
+    const mealSets=[];
+    for(const ing of fridgeItems.slice(0,3)){
+      try{const r=await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(ing)}`);const d=await r.json();if(d.meals)mealSets.push(...d.meals.slice(0,5));}catch(e){}
+    }
+    const seen=new Set();const unique=mealSets.filter(m=>{if(seen.has(m.idMeal))return false;seen.add(m.idMeal);return true;});
+    if(!unique.length){setRecipeError(true);setRecipeLoading(false);return;}
+    try{const r=await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${unique[0].idMeal}`);const d=await r.json();setRecipe(d.meals?.[0]||null);}catch(e){setRecipeError(true);}
+    setRecipeLoading(false);
+  };
+
+  const ings=useMemo(()=>{
+    if(!recipe)return[];
+    const r=[];for(let i=1;i<=20;i++){const n=recipe[`strIngredient${i}`]?.trim(),v=recipe[`strMeasure${i}`]?.trim();if(n)r.push({name:n,measure:v||''});}
+    return r;
+  },[recipe]);
+
+  const cuisines=['','Chicken','Beef','Vegetarian','Seafood','Pasta','Lamb','Dessert'];
+  const meals=['','Breakfast','Lunch','Supper','Snacks'];
+
+  if(view==='fork') return(
+    <div>
+      <div className="text-xs font-semibold tracking-widest uppercase text-eat mb-2 flex items-center gap-2"><Icon name="utensils" size={12}/>Anything Eat</div>
+      <div className="font-display font-bold text-ink text-2xl md:text-3xl mb-6 leading-tight">How are you eating tonight?</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+        {[{id:'dine',img:'https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=600&q=80',title:'Dine In',sub:'Cook at home · recipe ideas'},
+          {id:'takeout',img:'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',title:'Takeout',sub:'Restaurants near you'}
+        ].map(c=>(
+          <div key={c.id} onClick={()=>goView(c.id)} className="relative rounded-2xl overflow-hidden cursor-pointer h-44 group border-2 border-transparent hover:border-eat transition-colors">
+            <img src={c.img} alt={c.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"/>
+            <div className="absolute inset-0" style={{background:'linear-gradient(to top,rgba(0,0,0,.8),rgba(0,0,0,.1))'}}/>
+            <div className="absolute bottom-0 left-0 p-4">
+              <div className="font-display font-bold text-white text-xl">{c.title}</div>
+              <div className="text-white/60 text-xs mt-0.5">{c.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if(view==='dine') return(
+    <div>
+      <div className="flex items-center gap-3 mb-5">
+        <button onClick={()=>setView('fork')} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-ink2 border border-white/10 rounded-lg hover:bg-card2 transition-colors"><Icon name="chevronl" size={14}/>Back</button>
+        <div className="font-display font-semibold text-ink text-xl">Dine In</div>
+      </div>
+
+      <div className="mb-4">
+        <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-2">Cuisine</div>
+        <div className="flex flex-wrap gap-2">
+          {cuisines.map(c=>(
+            <Chip key={c} label={c||'Any'} active={cuisine===c} colorClass="on-eat"
+              onClick={()=>{setCuisine(c);loadRecipe(c,meal);}}/>
+          ))}
+        </div>
+      </div>
+      <div className="mb-4">
+        <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-2">Meal Type</div>
+        <div className="flex flex-wrap gap-2">
+          {meals.map(m=>(
+            <Chip key={m} label={m||'Any'} active={meal===m} colorClass="on-eat"
+              onClick={()=>{setMeal(m);loadRecipe(cuisine,m);}}/>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-card2 border border-white/10 rounded-xl p-4 mb-4">
+        <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-3 flex items-center gap-2"><Icon name="search" size={11}/>What's in your fridge?</div>
+        <div className="flex gap-2">
+          <input value={fridgeInput} onChange={e=>setFridgeInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addIngredient()}
+            placeholder="e.g. chicken, butternut…" className="flex-1 bg-card border border-white/10 rounded-lg px-3 py-2 text-sm text-ink placeholder-ink3 outline-none focus:border-eat transition-colors" style={{fontSize:16}}/>
+          <button onClick={addIngredient} className="px-3 py-2 bg-eat text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity flex items-center gap-1"><Icon name="plus" size={14}/>Add</button>
+        </div>
+        {fridgeItems.length>0&&(
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {fridgeItems.map(item=>(
+              <span key={item} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-eat/10 border border-eat/30 rounded-full text-xs text-eat">
+                {item}<button onClick={()=>setFridgeItems(i=>i.filter(x=>x!==item))} className="opacity-60 hover:opacity-100"><Icon name="x" size={10}/></button>
+              </span>
+            ))}
+            <button onClick={searchFridge} className="px-3 py-1 text-xs font-semibold text-eat border border-eat/40 rounded-full hover:bg-eat/10 transition-colors ml-1">Search with these →</button>
+          </div>
+        )}
+      </div>
+
+      {recipeLoading&&<Loading color="#E8612A"/>}
+      {recipeError&&!recipeLoading&&(
+        <div className="text-center py-8 text-ink2 text-sm">
+          Could not load a recipe. <button onClick={()=>loadRecipe(cuisine,meal)} className="text-eat font-semibold">Retry →</button>
+        </div>
+      )}
+      {recipe&&!recipeLoading&&(
+        <div>
+          <div className="bg-card2 border border-white/10 rounded-2xl overflow-hidden mb-3">
+            <img src={recipe.strMealThumb} alt={recipe.strMeal} className="w-full h-48 object-cover" loading="lazy"/>
+            <div className="p-4">
+              <div className="text-[10px] font-semibold tracking-wider uppercase text-eat mb-1">{recipe.strArea||'International'}</div>
+              <div className="font-display font-bold text-ink text-xl mb-2 leading-snug">{recipe.strMeal}</div>
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                <span className="px-2 py-0.5 bg-eat/10 border border-eat/20 rounded-full text-xs text-eat">{recipe.strCategory}</span>
+                {recipe.strTags&&recipe.strTags.split(',').slice(0,2).map(t=>t.trim()).filter(Boolean).map(t=>(
+                  <span key={t} className="px-2 py-0.5 bg-eat/10 border border-eat/20 rounded-full text-xs text-eat">{t}</span>
+                ))}
+              </div>
+              <p className="text-sm text-ink2 leading-relaxed mb-3">{recipe.strInstructions||''}</p>
+              <button onClick={()=>setIngOpen(o=>!o)} className="text-xs font-semibold text-gold flex items-center gap-1">
+                <Icon name={ingOpen?'chevronup':'chevrondown'} size={13}/>
+                {ingOpen?'Hide':'Show'} ingredients ({ings.length})
+              </button>
+              <div className={`ing-list-wrap ${ingOpen?'open':''}`}>
+                <div className="mt-3 flex flex-col gap-0">
+                  {ings.slice(0,12).map((ing,i)=>(
+                    <div key={i} className="grid py-1.5 border-b border-white/[.05] text-sm" style={{gridTemplateColumns:'8px 1fr auto',gap:'10px',alignItems:'center'}}>
+                      <div className="w-1.5 h-1.5 rounded-full bg-eat justify-self-center"/>
+                      <div className="text-ink">{ing.name}</div>
+                      <div className="text-ink3 text-xs">{ing.measure}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            {recipe.strYoutube
+              ?<a href={recipe.strYoutube} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 py-3 bg-eat text-white font-semibold rounded-xl text-sm hover:opacity-90 transition-opacity"><Icon name="play" size={14}/>Watch on YouTube</a>
+              :<button onClick={()=>loadRecipe(cuisine,meal)} className="py-3 bg-eat text-white font-semibold rounded-xl text-sm hover:opacity-90 transition-opacity">View Full Recipe</button>
+            }
+            <button onClick={()=>loadRecipe(cuisine,meal)} className="py-3 border border-white/15 text-ink2 font-medium rounded-xl text-sm hover:bg-card2 hover:border-white/25 transition-all flex items-center justify-center gap-2">
+              <Icon name="refresh" size={14}/>Try another
+            </button>
+          </div>
+          <div className="text-center text-[10px] text-ink4 mt-3">TheMealDB · Free API</div>
+        </div>
+      )}
+    </div>
+  );
+
+  // takeout
+  return(
+    <div>
+      <div className="flex items-center gap-3 mb-5">
+        <button onClick={()=>setView('fork')} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-ink2 border border-white/10 rounded-lg hover:bg-card2 transition-colors"><Icon name="chevronl" size={14}/>Back</button>
+        <div className="font-display font-semibold text-ink text-xl">Takeout Near You</div>
+      </div>
+      <button onClick={onChangeLocation} className="w-full flex items-center gap-2 px-4 py-2.5 bg-card2 border border-white/10 rounded-xl text-sm text-ink2 hover:border-gold/40 transition-colors mb-4">
+        <Icon name="mappin" size={14} cls="text-gold"/><span className="flex-1 text-left">{location.label} — {location.sub}</span><span className="text-xs font-semibold text-gold">Change</span>
+      </button>
+      <div className="flex items-center gap-3 mb-5">
+        <span className="text-[10px] font-semibold tracking-wider uppercase text-ink3 whitespace-nowrap">Radius</span>
+        <input type="range" className="flex-1 eat-range" min={1} max={20} value={radius} onChange={e=>{const v=parseInt(e.target.value);setRadius(v);clearTimeout(radTimerRef.current);radTimerRef.current=setTimeout(()=>loadTakeout(v),600);}}/>
+        <span className="text-xs font-semibold text-eat min-w-[40px] text-right">{radius} km</span>
+      </div>
+      {restLoading&&<Loading color="#E8612A"/>}
+      {restaurants&&!restLoading&&(
+        <div className="rest-grid">
+          {restaurants.map((r,i)=>(
+            <div key={i} className="bg-card2 border border-white/[.07] rounded-2xl overflow-hidden">
+              <img src={r.img} alt={r.name} className="w-full h-28 object-cover" loading="lazy"/>
+              <div className="p-3">
+                <div className="font-display font-semibold text-ink text-sm mb-2 leading-tight">{r.name}</div>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {String(r.cuisine).split('/').map(c=><span key={c} className="px-2 py-0.5 bg-eat/10 text-eat rounded-full text-[10px] font-medium">{c.trim()}</span>)}
+                  <span className="px-2 py-0.5 bg-white/5 text-ink3 rounded-full text-[10px] border border-white/[.07]">{r.dist} km</span>
+                  {r.delivery&&<span className="px-2 py-0.5 bg-wear/10 text-wear rounded-full text-[10px] font-medium">Delivery</span>}
+                </div>
+                <div className="text-xs text-ink3 mb-3 flex items-center gap-1"><Icon name="mappin" size={10}/>{r.addr}</div>
+                <div className="flex gap-2">
+                  <button onClick={()=>window.open(`https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lon}`,`_blank`)} className="flex-1 py-2 bg-eat text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 hover:opacity-90">
+                    <Icon name="mappin" size={12}/>Directions
+                  </button>
+                  {r.phone
+                    ?<button onClick={()=>window.open(`tel:${r.phone}`)} className="flex-1 py-2 bg-card border border-white/10 text-ink2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 hover:bg-card2">
+                      <Icon name="globe" size={12}/>Call
+                     </button>
+                    :<button className="flex-1 py-2 bg-card border border-white/10 text-ink3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 opacity-50 cursor-default">
+                      <Icon name="globe" size={12}/>Call
+                     </button>
+                  }
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="text-center text-[10px] text-ink4 mt-4">OpenStreetMap · live data · {radius}km radius</div>
+    </div>
+  );
+}
+
+/* ── WEAR PANE ── */
+function WearPane({location,onChangeLocation}){
+  const [weather,setWeather]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [gender,setGender]=useState('any');
+  const [occasion,setOccasion]=useState('any');
+
+  const load=useCallback(async()=>{
+    setLoading(true);
+    try{
+      const{lat,lon}=location;
+      const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&wind_speed_unit=kmh`);
+      const d=await r.json();const c=d.current;
+      setWeather({temp:Math.round(c.temperature_2m),feels:Math.round(c.apparent_temperature),wind:Math.round(c.wind_speed_10m),code:c.weather_code});
+    }catch(e){setWeather({temp:22,feels:20,wind:15,code:0});}
+    setLoading(false);
+  },[location]);
+
+  useEffect(()=>{load();},[load]);
+
+  const wKey=useMemo(()=>{
+    if(!weather)return 'mild';
+    const{temp,code}=weather;
+    if(temp<12)return 'cold';
+    if(code>=51&&code<=82)return 'rain';
+    if(temp>=28)return 'hot';
+    return 'mild';
+  },[weather]);
+
+  const desc=useMemo(()=>{
+    if(!weather)return '';
+    const c=weather.code;
+    return c===0?'Clear sky':c<=3?'Partly cloudy':c<=48?'Foggy':c<=67?'Rainy':c<=82?'Showers':'Overcast';
+  },[weather]);
+
+  const outfit=useMemo(()=>{
+    const gKey=gender==='any'?'neutral':gender;
+    const oKey=occasion==='any'?'any':occasion;
+    const d=OUTFIT_DATA[wKey];
+    const imgs=(d?.images?.[gKey]?.[oKey]||d?.images?.[gKey]?.any||d?.images?.neutral?.any||[]);
+    const items=(d?.items?.[gKey]?.[oKey]||d?.items?.[gKey]?.any||d?.items?.neutral?.any||[]);
+    return{imgs,items};
+  },[wKey,gender,occasion]);
+
+  const wLabel={cold:'Cold',rain:'Rainy',hot:'Hot',mild:'Mild'}[wKey]||'';
+  const oLabel={any:'',casual:' · Casual',work:' · Work',formal:' · Formal',sport:' · Sport',beach:' · Beach'}[occasion]||'';
+  const gLabel={any:'',men:' for Men',women:' for Women',neutral:' Unisex'}[gender]||'';
+
+  return(
+    <div>
+      <div className="text-xs font-semibold tracking-widest uppercase text-wear mb-2 flex items-center gap-2"><Icon name="shirt" size={12}/>Anything Wear</div>
+      <div className="font-display font-bold text-ink text-2xl md:text-3xl mb-5 leading-tight">What to wear today.</div>
+
+      {loading&&<Loading color="#1F9B6E"/>}
+      {weather&&!loading&&(
+        <>
+          {/* weather card */}
+          <div className="flex items-center gap-4 bg-card2 border border-white/[.08] rounded-2xl p-4 mb-5">
+            <div className="font-display font-bold text-wear leading-none" style={{fontSize:'3rem'}}>{weather.temp}°</div>
+            <div className="flex-1">
+              <div className="font-semibold text-ink text-sm">{desc}</div>
+              <div className="text-xs text-ink2 mt-0.5">Feels {weather.feels}°C · Wind {weather.wind} km/h</div>
+              <div className="text-[10px] text-ink3 mt-1 flex items-center gap-1 cursor-pointer hover:text-gold transition-colors" onClick={onChangeLocation}><Icon name="globe" size={10}/>Open-Meteo · {location.label} <span className="text-gold font-semibold ml-1">Change city →</span></div>
+            </div>
+            <button onClick={load} className="p-2 text-ink3 hover:text-wear transition-colors rounded-lg hover:bg-card"><Icon name="refresh" size={16}/></button>
+          </div>
+
+          {/* filters */}
+          <div className="mb-4">
+            <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-2 flex items-center gap-1.5"><Icon name="users" size={11}/>Gender</div>
+            <div className="flex flex-wrap gap-2">
+              {[['any','Any'],['men','Men'],['women','Women'],['neutral','Unisex']].map(([v,l])=>(
+                <Chip key={v} label={l} active={gender===v} colorClass="on-wear" onClick={()=>setGender(v)}/>
+              ))}
+            </div>
+          </div>
+          <div className="mb-5">
+            <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-2 flex items-center gap-1.5"><Icon name="calendar" size={11}/>Occasion</div>
+            <div className="flex flex-wrap gap-2">
+              {[['any','Any'],['casual','Casual'],['work','Work'],['formal','Formal'],['sport','Sport'],['beach','Beach']].map(([v,l])=>(
+                <Chip key={v} label={l} active={occasion===v} colorClass="on-wear" onClick={()=>setOccasion(v)}/>
+              ))}
+            </div>
+          </div>
+
+          {/* outfit heading */}
+          <div className="font-display font-semibold text-ink text-base mb-3">{wLabel}{oLabel}{gLabel} Outfit Inspiration</div>
+
+          {/* outfit images — always visible */}
+          {outfit.imgs.length>0&&(
+            <div className="outfit-img-grid mb-4">
+              {outfit.imgs.slice(0,2).map((src,i)=>(
+                <div key={i} className={`relative rounded-2xl overflow-hidden ${i===0?'row-span-1':''}`} style={{height:i===0?240:140}}>
+                  <img src={src} alt={`Outfit ${i+1}`} className="w-full h-full object-cover" loading="lazy"/>
+                  <div className="absolute inset-0" style={{background:'linear-gradient(to top,rgba(0,0,0,.6) 0%,transparent 55%)'}}/>
+                  <div className="absolute bottom-2 left-3 right-3">
+                    <span className="text-[11px] font-medium text-white/90">{i===0?`${wLabel}${oLabel}${gLabel}`:gender==='any'?'Alternative look':gender==='men'?'Men\'s option':'Women\'s option'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* item list */}
+          <div className="bg-card2 border border-white/[.08] rounded-xl p-4 mb-4">
+            <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-3 flex items-center gap-1.5">
+              <Icon name="check" size={11}/>{weather.temp}°C · {desc} — Recommended items
+            </div>
+            <div className="flex flex-col gap-2">
+              {outfit.items.map((item,i)=>(
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-wear flex-shrink-0"/>
+                  <span className="text-sm text-ink">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* retailers */}
+          <div className="bg-card2 border border-white/[.08] rounded-xl p-4">
+            <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-3 flex items-center gap-1.5"><Icon name="shopping" size={11}/>Where to buy</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {RETAILERS.map(r=>(
+                <button key={r.name} onClick={()=>window.open(r.url,'_blank')} className="py-2 px-3 bg-card border border-white/10 rounded-lg text-xs font-semibold text-ink hover:border-gold/40 hover:text-gold transition-all text-center">{r.name}</button>
+              ))}
+            </div>
+          </div>
+          <div className="text-center text-[10px] text-ink4 mt-3">Weather via Open-Meteo · Images via Unsplash</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── WATCH PANE ── */
+function WatchPane(){
+  const [platform,setPlatform]=useState('');
+  const [type,setType]=useState('');
+  const [genre,setGenre]=useState('');
+
+  const filtered=useMemo(()=>{
+    let f=CURATED_TITLES;
+    if(platform)f=f.filter(t=>t.platforms.includes(platform));
+    if(genre)f=f.filter(t=>t.genres.includes(genre));
+    if(type==='movie')f=f.filter(t=>!t.series);
+    if(type==='tv')f=f.filter(t=>t.series);
+    if(!f.length)f=CURATED_TITLES.slice(0,6);
+    return f.slice(0,8);
+  },[platform,type,genre]);
+
+  return(
+    <div>
+      <div className="text-xs font-semibold tracking-widest uppercase text-watch mb-2 flex items-center gap-2"><Icon name="tv" size={12}/>Anything Watch</div>
+      <div className="font-display font-bold text-ink text-2xl md:text-3xl mb-5 leading-tight">What to watch tonight.</div>
+
+      <div className="mb-4">
+        <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-2">Platform</div>
+        <div className="flex flex-wrap gap-2">
+          {[['','All'],['netflix','Netflix'],['amazon','Prime'],['disney','Disney+'],['apple','Apple TV+']].map(([v,l])=>(
+            <Chip key={v} label={l} active={platform===v} colorClass="on-watch" onClick={()=>setPlatform(v)}/>
+          ))}
+        </div>
+      </div>
+      <div className="mb-4">
+        <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-2">Type</div>
+        <div className="flex flex-wrap gap-2">
+          {[['','All'],['movie','Movies'],['tv','Series']].map(([v,l])=>(
+            <Chip key={v} label={l} active={type===v} colorClass="on-watch" onClick={()=>setType(v)}/>
+          ))}
+        </div>
+      </div>
+      <div className="mb-5">
+        <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-2">Genre</div>
+        <div className="flex flex-wrap gap-2">
+          {[['','All'],['28','Action'],['35','Comedy'],['18','Drama'],['27','Horror'],['878','Sci-Fi'],['10749','Romance'],['99','Documentary']].map(([v,l])=>(
+            <Chip key={v} label={l} active={genre===v} colorClass="on-watch" onClick={()=>setGenre(v)}/>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2.5">
+        {filtered.map(t=>(
+          <div key={t.title} className="flex gap-3 bg-card2 border border-white/[.07] rounded-xl p-3">
+            <img src={t.poster} alt={t.title} className="w-16 h-24 object-cover rounded-lg flex-shrink-0" loading="lazy" onError={e=>e.target.style.display='none'}/>
+            <div className="flex-1 min-w-0">
+              <div className="font-display font-semibold text-ink text-sm leading-snug mb-1.5">{t.title}</div>
+              <div className="flex flex-wrap gap-1 mb-1.5">
+                <span className="px-2 py-0.5 bg-watch/10 text-[#a99aff] rounded-full text-[10px] font-medium">{t.series?'Series':'Movie'}</span>
+                {t.platforms.slice(0,2).map(p=><span key={p} className="px-2 py-0.5 bg-watch/10 text-[#a99aff] rounded-full text-[10px]">{PL_LABELS[p]||p}</span>)}
+              </div>
+              <div className="text-[11px] text-ink3 mb-1.5">{t.year}</div>
+              <p className="text-xs text-ink2 leading-relaxed line-clamp-2 mb-2">{t.desc}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {t.platforms.map(p=>(
+                  <a key={p} href={(STREAM_URLS[p]||'https://www.google.com/search?q=')+encodeURIComponent(t.title)} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-watch/10 border border-watch/25 rounded text-[10px] font-semibold text-[#a99aff] hover:bg-watch/20 transition-colors">
+                    <Icon name="play" size={9}/>Watch on {PL_LABELS[p]||p}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="text-center text-[10px] text-ink4 mt-4">Curated 2024 titles · Add a TMDB key for live results</div>
+    </div>
+  );
+}
+
+/* ── DO PANE ── */
+function DoPane({location,onChangeLocation}){
+  const [doMode,setDoMode]=useState('activity'); // activity | bored
+  const [category,setCategory]=useState('');
+  const [city,setCity]=useState('cape-town');
+  const [activity,setActivity]=useState(null);
+  const [actImg,setActImg]=useState('');
+  const [boredType,setBoredType]=useState('quiz');
+  const [boredContent,setBoredContent]=useState(null);
+  const [boredLoading,setBoredLoading]=useState(false);
+  const [quizAnswered,setQuizAnswered]=useState(null);
+
+  const pickActivity=useCallback((cat,c)=>{
+    const loc=c||city;
+    const data=ACTS[loc]||ACTS['cape-town'];
+    const acts=(cat||category)?(data[(cat||category)]||data.any):data.any;
+    const pick=randPick(acts);
+    setActivity(pick);
+    setActImg(randPick(ACT_IMGS));
+  },[city,category]);
+
+  useEffect(()=>{pickActivity('','cape-town');},[]);
+
+  const loadBored=useCallback(async(type)=>{
+    const t=type||boredType;
+    setBoredLoading(true);setBoredContent(null);setQuizAnswered(null);
+    try{
+      if(t==='fact'){
+        const f=randPick(FACTS);const isSA=FACTS.indexOf(f)<12;
+        setBoredContent({type:'fact',isSA,text:f});setBoredLoading(false);return;
+      }
+      if(t==='joke'){
+        const r=await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,racist,sexist,political,explicit&type=single&safe-mode');
+        const d=await r.json();
+        if(!d.error&&d.joke){setBoredContent({type:'joke',text:d.joke});setBoredLoading(false);return;}
+        throw new Error('no joke');
+      }
+      if(t==='quiz'){
+        const r=await fetch('https://opentdb.com/api.php?amount=1&type=multiple&category=9');
+        const d=await r.json();
+        if(d.response_code===0&&d.results.length){
+          const q=d.results[0];
+          const opts=[...q.incorrect_answers,q.correct_answer].sort(()=>Math.random()-.5).map(o=>decodeHTML(o));
+          setBoredContent({type:'quiz',question:decodeHTML(q.question),opts,correct:decodeHTML(q.correct_answer),category:q.category,difficulty:q.difficulty});
+          setBoredLoading(false);return;
+        }
+        throw new Error('no quiz');
+      }
+    }catch(e){
+      if(t==='joke'){const jokes=["Why do scientists rarely tell jokes? Because they always fall flat.","What do you call a bear with no teeth? A gummy bear.","Why can't you trust an atom? Because they make up everything.","Why did the scarecrow win an award? He was outstanding in his field."];setBoredContent({type:'joke',text:randPick(jokes)});}
+      else if(t==='quiz'){const q=randPick(FALLBACK_QUIZZES);const opts=[...q.opts].sort(()=>Math.random()-.5);setBoredContent({type:'quiz',question:q.q,opts,correct:q.a,category:'South Africa',difficulty:'medium'});}
+      else{const f=randPick(FACTS);setBoredContent({type:'fact',isSA:true,text:f});}
+    }
+    setBoredLoading(false);
+  },[boredType]);
+
+  const cityNames={'cape-town':'Cape Town',johannesburg:'Johannesburg',durban:'Durban',pretoria:'Pretoria',pe:'Gqeberha'};
+  const catNames={'':'Any',outdoor:'Outdoor',arts:'Arts & Culture',food:'Food & Drink',wellness:'Wellness',social:'Social'};
+
+  return(
+    <div>
+      <div className="text-xs font-semibold tracking-widest uppercase text-do mb-2 flex items-center gap-2"><Icon name="compass" size={12}/>Anything Do</div>
+      <div className="font-display font-bold text-ink text-2xl md:text-3xl mb-4 leading-tight">What to do today.</div>
+
+      {/* mode tabs */}
+      <div className="flex bg-card2 border border-white/10 rounded-full p-1 mb-5 gap-1">
+        {[['activity','Activities'],['bored','I\'m Bored']].map(([v,l])=>(
+          <button key={v} onClick={()=>{setDoMode(v);if(v==='bored'&&!boredContent)loadBored(boredType);}} className={`flex-1 py-2.5 text-sm font-medium rounded-full transition-all ${doMode===v?'bg-do/15 text-do font-semibold':'text-ink3 hover:text-ink'}`}>{l}</button>
+        ))}
+      </div>
+
+      {doMode==='activity'&&(
+        <>
+          <div className="mb-4">
+            <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-2">Category</div>
+            <div className="flex flex-wrap gap-2">
+              {[['','Any'],['outdoor','Outdoor'],['arts','Arts'],['food','Food'],['wellness','Wellness'],['social','Social']].map(([v,l])=>(
+                <Chip key={v} label={l} active={category===v} colorClass="on-do" onClick={()=>{setCategory(v);pickActivity(v,city);}}/>
+              ))}
+            </div>
+          </div>
+          <div className="mb-5">
+            <div className="text-[10px] font-semibold tracking-wider uppercase text-ink3 mb-2">City</div>
+            <div className="flex flex-wrap gap-2">
+              {[['cape-town','Cape Town'],['johannesburg','Joburg'],['durban','Durban'],['pretoria','Pretoria'],['pe','Gqeberha']].map(([v,l])=>(
+                <Chip key={v} label={l} active={city===v} colorClass="on-do" onClick={()=>{setCity(v);pickActivity(category,v);}}/>
+              ))}
+            </div>
+          </div>
+          {activity&&(
+            <div>
+              <div className="bg-card2 border border-white/[.07] rounded-2xl overflow-hidden mb-3">
+                <img src={actImg} alt="Activity" className="w-full h-44 object-cover" loading="lazy"/>
+                <div className="p-4">
+                  <div className="font-display font-bold text-ink text-xl leading-snug mb-3">{activity}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="px-2.5 py-1 bg-do/10 border border-do/25 rounded-full text-xs text-do flex items-center gap-1"><Icon name="mappin" size={10}/>{cityNames[city]||'Cape Town'}</span>
+                    <span className="px-2.5 py-1 bg-do/10 border border-do/25 rounded-full text-xs text-do">{catNames[category]||'Any'}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <button onClick={()=>window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity+' '+(cityNames[city]||'Cape Town'))}`,'_blank')}
+                  className="py-3 bg-do text-bg font-semibold rounded-xl text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+                  <Icon name="mappin" size={14}/>Find on Map
+                </button>
+                <button onClick={()=>pickActivity(category,city)} className="py-3 border border-white/15 text-ink2 font-medium rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-card2 hover:border-white/25 transition-all">
+                  <Icon name="refresh" size={14}/>Another Idea
+                </button>
+              </div>
+              <div className="text-center text-[10px] text-ink4 mt-3">Curated activities · {cityNames[city]||'Cape Town'}</div>
+            </div>
+          )}
+        </>
+      )}
+
+      {doMode==='bored'&&(
+        <div>
+          <div className="flex flex-wrap gap-2 mb-5">
+            {[['quiz','Quiz'],['joke','Joke'],['fact','Fact']].map(([v,l])=>(
+              <Chip key={v} label={l} active={boredType===v} colorClass="on-do" onClick={()=>{setBoredType(v);loadBored(v);}}/>
+            ))}
+          </div>
+          {boredLoading&&<Loading color="#C4970A"/>}
+          {boredContent&&!boredLoading&&(
+            <div>
+              <div className="bg-card2 border border-white/[.07] rounded-2xl p-5 mb-3">
+                <div className="text-[10px] font-semibold tracking-wider uppercase text-do mb-3">
+                  {boredContent.type==='fact'?(boredContent.isSA?'🇿🇦 South African Fact':'🌍 Did You Know?')
+                  :boredContent.type==='joke'?'Joke'
+                  :`${boredContent.category} · ${boredContent.difficulty}`}
+                </div>
+                <div className="font-display font-semibold text-ink text-lg leading-snug">
+                  {boredContent.type==='quiz'?boredContent.question:boredContent.text}
+                </div>
+                {boredContent.type==='quiz'&&(
+                  <div className="mt-4 flex flex-col gap-2">
+                    {boredContent.opts.map(opt=>(
+                      <button key={opt} disabled={!!quizAnswered}
+                        onClick={()=>setQuizAnswered(opt)}
+                        className={`quiz-opt text-left ${quizAnswered?(opt===boredContent.correct?'correct':opt===quizAnswered&&opt!==boredContent.correct?'wrong':'disabled'):''}`}>
+                        {opt}
+                      </button>
+                    ))}
+                    {quizAnswered&&(
+                      <div className={`text-sm font-semibold mt-1 ${quizAnswered===boredContent.correct?'text-wear':'text-eat'}`}>
+                        {quizAnswered===boredContent.correct?'Correct! ✓':'Not quite — the answer is: '+boredContent.correct}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button onClick={()=>loadBored(boredType)} className="w-full py-3 border border-white/15 text-ink2 font-medium rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-card2 hover:border-white/25 transition-all">
+                <Icon name="refresh" size={14}/>
+                {boredContent.type==='quiz'?'Next Question':boredContent.type==='joke'?'Another Joke':'Another Fact'}
+              </button>
+              <div className="text-center text-[10px] text-ink4 mt-3">
+                {boredContent.type==='quiz'?'Open Trivia DB':boredContent.type==='joke'?'JokeAPI · Safe mode':'Curated facts'}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══ LOCATION MODAL ════════════════════════════════════════════════════════════ */
+function LocationModal({currentLocation,onSelect,onClose}){
+  return(
+    <div className="fixed inset-0 z-50 bg-black/85 flex items-end justify-center" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="w-full max-w-lg bg-[#1A1A1A] rounded-t-3xl p-6 border-t border-white/10 max-h-[70vh] overflow-y-auto">
+        <div className="font-display font-bold text-ink text-xl mb-5 flex items-center gap-2"><Icon name="mappin" size={18} cls="text-gold"/>Choose Your City</div>
+        <div className="flex flex-col gap-2">
+          {LOCATIONS.map(l=>(
+            <button key={l.id} onClick={()=>onSelect(l)}
+              className={`flex items-center gap-3 p-3.5 rounded-xl text-left border transition-all ${currentLocation.id===l.id?'border-gold bg-gold/10':'border-white/[.07] bg-card2 hover:border-white/20'}`}>
+              <Icon name="globe" size={16} cls={currentLocation.id===l.id?'text-gold':'text-ink3'}/>
+              <div>
+                <div className={`font-semibold text-sm ${currentLocation.id===l.id?'text-gold':'text-ink'}`}>{l.label}</div>
+                <div className="text-xs text-ink3 mt-0.5">{l.sub}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+        <button onClick={onClose} className="w-full mt-4 py-3 text-ink2 text-sm font-semibold border border-white/10 rounded-xl hover:bg-card2 transition-colors">Cancel</button>
+      </div>
+    </div>
+  );
+}
+/* ═══ HABIT / CTA SECTION ═══════════════════════════════════════════════════════ */
+function HabitSection({onDecide}){
+  return(
+    <section id="habit" className="py-14 md:py-20">
+      <div className="max-w-6xl mx-auto px-4 md:px-8">
+        <Reveal>
+          <div className="bg-gradient-to-br from-gold/[.07] to-gold/[.02] border border-gold/20 rounded-3xl p-10 md:p-16 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-64 rounded-full pointer-events-none" style={{background:'radial-gradient(ellipse,rgba(200,169,110,.09) 0%,transparent 70%)'}}/>
+            <div className="text-xs font-semibold tracking-widest uppercase text-ink3 mb-5">The daily habit</div>
+            <h2 className="font-display font-bold leading-tight text-ink mb-4 relative" style={{fontSize:'clamp(1.8rem,4vw,3rem)'}}>
+              The best decision you'll make today<br/>is using Anything <em className="italic text-gold">tomorrow.</em>
+            </h2>
+            <p className="text-ink2 leading-relaxed mb-8 max-w-md mx-auto text-sm md:text-base">
+              People who build a 30-second daily decision routine report spending 40 minutes more per day on things that actually matter.
+            </p>
+            <button onClick={onDecide} className="inline-flex items-center gap-2 px-8 py-4 bg-gold text-bg font-semibold rounded-full text-base hover:bg-gold2 hover:shadow-[0_0_32px_rgba(200,169,110,.35)] hover:-translate-y-0.5 transition-all">
+              Start deciding <Icon name="arrowr" size={16}/>
+            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
+              {[
+                [<Icon name="zap" size={12}/>, '23-second decisions'],
+                [<Icon name="flag" size={12}/>, 'Built for South Africa'],
+                [<Icon name="star" size={12}/>, 'No fees required'],
+              ].map(([icon,label],i)=>(
+                <span key={i} className="inline-flex items-center gap-2 px-4 py-2 bg-card2 border border-white/10 rounded-full text-xs text-ink2">
+                  <span className="text-gold">{icon}</span>{label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* ═══ FOOTER ═══════════════════════════════════════════════════════════════════ */
+function Footer({onTabSelect}){
+  return(
+    <footer className="bg-bg3 border-t border-white/[.06] pt-12 pb-8">
+      <div className="max-w-6xl mx-auto px-4 md:px-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 pb-10 border-b border-white/[.06]">
+          <div className="col-span-2 md:col-span-1">
+            <div className="font-display font-bold text-xl text-ink flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-gold animate-pulse-dot inline-block"/>Anything
+            </div>
+            <p className="text-xs text-ink3 leading-relaxed max-w-[220px]">Helping South Africans spend less time deciding, and more time living. Built with IOL — Independent Online.</p>
+          </div>
+          <div>
+            <div className="text-[10px] font-semibold tracking-widest uppercase text-ink3 mb-4">Decide</div>
+            <div className="flex flex-col gap-2.5">
+              {[['eat','Eat'],['wear','Wear'],['watch','Watch'],['do','Do']].map(([t,l])=>(
+                <button key={t} onClick={()=>onTabSelect(t)} className="text-sm text-ink3 hover:text-ink text-left transition-colors">Anything {l}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] font-semibold tracking-widest uppercase text-ink3 mb-4">Platform</div>
+            <div className="flex flex-col gap-2.5">
+              {['How it works','The cost of indecision','About'].map(l=>(
+                <button key={l} className="text-sm text-ink3 hover:text-ink text-left transition-colors">{l}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] font-semibold tracking-widest uppercase text-ink3 mb-4">Legal</div>
+            <div className="flex flex-col gap-2.5">
+              {['Privacy policy','Terms of use','Cookie policy'].map(l=>(
+                <button key={l} className="text-sm text-ink3 hover:text-ink text-left transition-colors">{l}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="text-xs text-ink4">© 2025 Anything. A product of Independent Online (IOL) · Independent Media.</div>
+          <div className="text-xs text-ink3 flex items-center gap-1.5">Built with <span className="text-gold font-semibold">IOL</span> · South Africa's leading digital publisher</div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* ═══ APP ═══════════════════════════════════════════════════════════════════════ */
+function App(){
+  const [location,setLocation]=useState(LOCATIONS[0]);
+  const [locModalOpen,setLocModalOpen]=useState(false);
+
+  const scrollToProducts=()=>{
+    document.getElementById('products')?.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+
+  return(
+    <div className="min-h-screen bg-bg">
+      <Nav onTabSelect={()=>scrollToProducts()}/>
+      <Hero onDecide={scrollToProducts}/>
+      <CostSection/>
+      <HowSection/>
+      <ProductsSection location={location} setLocModalOpen={setLocModalOpen}/>
+      <HabitSection onDecide={scrollToProducts}/>
+      <Footer onTabSelect={scrollToProducts}/>
+      {locModalOpen&&(
+        <LocationModal
+          currentLocation={location}
+          onSelect={l=>{setLocation(l);setLocModalOpen(false);}}
+          onClose={()=>setLocModalOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
